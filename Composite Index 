@@ -1,0 +1,88 @@
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "colab": {
+      "provenance": [],
+      "authorship_tag": "ABX9TyM+4ETa+zqztRF31jTH1p8u",
+      "include_colab_link": true
+    },
+    "kernelspec": {
+      "name": "python3",
+      "display_name": "Python 3"
+    },
+    "language_info": {
+      "name": "python"
+    }
+  },
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "view-in-github",
+        "colab_type": "text"
+      },
+      "source": [
+        "<a href=\"https://colab.research.google.com/github/tiarathomas98/learning-poverty-map/blob/main/Composite%20Index%20\" target=\"_parent\"><img src=\"https://colab.research.google.com/assets/colab-badge.svg\" alt=\"Open In Colab\"/></a>"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "sR2oJSk69z84",
+        "outputId": "c5c299cf-9b19-41da-9604-5baaa66ba2e0",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        }
+      },
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "         State  Per_Capita_Spend  Composite_Delivery_Index\n",
+            "        Kerala              3600                100.000000\n",
+            "    Tamil Nadu              3250                 91.688681\n",
+            "   Maharashtra              3400                 77.337696\n",
+            "       Gujarat              3180                 45.504370\n",
+            "Madhya Pradesh              2100                 12.885296\n",
+            " Uttar Pradesh              1950                  0.000000\n"
+          ]
+        }
+      ],
+      "source": [
+        "import pandas as pd\n",
+        "\n",
+        "# 1. State-level public health dataset\n",
+        "data = {\n",
+        "    'State': ['Tamil Nadu', 'Gujarat', 'Maharashtra', 'Kerala', 'Madhya Pradesh', 'Uttar Pradesh'],\n",
+        "    'Per_Capita_Spend': [3250, 3180, 3400, 3600, 2100, 1950],\n",
+        "    'SDG_Health_Score': [78.5, 64.2, 74.0, 82.1, 52.3, 48.6],\n",
+        "    'Facility_Op_Rate': [92.4, 71.0, 85.0, 96.2, 58.0, 51.2],\n",
+        "    'Stockout_Variance': [4.2, 18.5, 8.1, 2.5, 28.4, 32.1]\n",
+        "}\n",
+        "\n",
+        "df = pd.DataFrame(data)\n",
+        "\n",
+        "# 2. Min-Max Normalization function (inverting negative metrics like stockouts)\n",
+        "def normalize(series, invert=False):\n",
+        "    min_val = series.min()\n",
+        "    max_val = series.max()\n",
+        "    norm = (series - min_val) / (max_val - min_val)\n",
+        "    return (1 - norm) if invert else norm\n",
+        "\n",
+        "df['Norm_SDG'] = normalize(df['SDG_Health_Score'])\n",
+        "df['Norm_Op_Rate'] = normalize(df['Facility_Op_Rate'])\n",
+        "df['Norm_Stockout'] = normalize(df['Stockout_Variance'], invert=True)\n",
+        "\n",
+        "# 3. Compute Composite Public Health Delivery Index (Scale 0-100)\n",
+        "df['Composite_Delivery_Index'] = ((df['Norm_SDG'] + df['Norm_Op_Rate'] + df['Norm_Stockout']) / 3) * 100\n",
+        "\n",
+        "# 4. Display ranked results\n",
+        "ranked_df = df[['State', 'Per_Capita_Spend', 'Composite_Delivery_Index']].sort_values(by='Composite_Delivery_Index', ascending=False)\n",
+        "print(ranked_df.to_string(index=False))"
+      ]
+    }
+  ]
+}
